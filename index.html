@@ -160,7 +160,7 @@
   <section class="products" id="products">
     <h2>Our Products</h2>
 
-    <div class="grid">
+    <div class="grid" id="product-grid">
   <div class="card">
     <img class="product-image"
          src="products/images/iphone13.jpg"
@@ -222,6 +222,77 @@
     <p>Contact: <a href="https://wa.me/255786977497">WhatsApp Us</a></p>
     <p>&copy; 2026 Massawe Phone Accessories</p>
   </footer>
+    <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    onSnapshot
+  } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCB6CY1gJ9AkU0130c36XeSA6CVlAKS6Wk",
+    authDomain: "massawe-phone-accessories.firebaseapp.com",
+    projectId: "massawe-phone-accessories",
+    storageBucket: "massawe-phone-accessories.firebasestorage.app",
+    messagingSenderId: "1027259580485",
+    appId: "1:102725958048:web:65fcfb51dd7952f84e232c",
+    measurementId: "G-R4HND9LQCD"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const productGrid = document.getElementById("product-grid");
+
+  onSnapshot(collection(db, "products"), (snapshot) => {
+    snapshot.docChanges().forEach((change) => {
+      const product = change.doc.data();
+      const cardId = "firebase-product-" + change.doc.id;
+
+      if (change.type === "removed") {
+        document.getElementById(cardId)?.remove();
+        return;
+      }
+
+      let card = document.getElementById(cardId);
+      if (!card) {
+        card = document.createElement("div");
+        card.className = "card";
+        card.id = cardId;
+        productGrid.appendChild(card);
+      }
+
+      const name = String(product.name || "Product");
+      const price = Number(product.price);
+      const imageUrl = String(product.imageUrl || "");
+
+      const image = document.createElement("img");
+      image.className = "product-image";
+      image.src = imageUrl;
+      image.alt = name;
+      image.onerror = () => image.style.display = "none";
+
+      const title = document.createElement("h3");
+      title.textContent = name;
+
+      const priceText = document.createElement("p");
+      priceText.className = "price";
+      priceText.textContent = Number.isFinite(price)
+        ? "TSh " + price.toLocaleString("en-TZ")
+        : "Ask for price";
+
+      const order = document.createElement("a");
+      order.className = "button";
+      order.textContent = "Order Now";
+      order.href = "https://wa.me/255786977497?text=" +
+        encodeURIComponent("I want to order " + name);
+
+      card.replaceChildren(image, title, priceText, order);
+    });
+  }, (error) => {
+    console.error("Could not load products:", error);
+  });
+</script>
 
 </body>
 </html>
