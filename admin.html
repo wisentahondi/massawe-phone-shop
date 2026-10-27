@@ -2,194 +2,258 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Massawe Phone Accessories | Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Massawe Phone Accessories - Admin</title>
   <style>
-    :root { --navy:#111827; --blue:#2563eb; --bg:#f3f6fb; --muted:#64748b; --line:#e2e8f0; }
-    * { box-sizing:border-box; }
-    body { margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--bg); color:#0f172a; }
-    .layout { min-height:100vh; display:grid; grid-template-columns:240px 1fr; }
-    aside { background:var(--navy); color:white; padding:24px 16px; }
-    .brand { display:flex; align-items:center; gap:12px; margin:0 8px 32px; }
-    .brand-icon { width:42px;height:42px;border-radius:12px;background:#2563eb;display:grid;place-items:center;font-size:22px; }
-    .brand strong { display:block; font-size:15px; line-height:1.35; }
-    .brand small { color:#cbd5e1; font-size:12px; }
-    .nav-label { color:#94a3b8; font-size:11px; letter-spacing:1.2px; margin:24px 12px 10px; }
-    .nav-btn { display:flex; gap:12px; align-items:center; width:100%; padding:12px; margin:4px 0; border:0; border-radius:10px; background:transparent; color:#cbd5e1; text-align:left; font-size:14px; cursor:pointer; }
-    .nav-btn.active,.nav-btn:hover { background:#263449; color:white; }
-    main { min-width:0; }
-    header { background:white; border-bottom:1px solid var(--line); padding:18px 28px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    header h1 { margin:0; font-size:22px; }
-    header p { margin:5px 0 0; color:var(--muted); font-size:13px; }
-    .admin-chip { background:#eff6ff; color:#1d4ed8; border-radius:999px; padding:9px 12px; font-size:12px; font-weight:bold; white-space:nowrap; }
-    .content { padding:26px; max-width:1250px; margin:auto; }
-    .welcome { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:22px; }
-    .welcome h2 { margin:0 0 6px; font-size:24px; }
-    .welcome p { margin:0; color:var(--muted); font-size:14px; }
-    button.primary { background:var(--blue); color:white; border:0; border-radius:9px; padding:11px 15px; font-weight:bold; cursor:pointer; }
-    button.secondary { background:white; color:#334155; border:1px solid var(--line); border-radius:9px; padding:10px 13px; cursor:pointer; }
-    .stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:15px; margin-bottom:24px; }
-    .stat { background:white; border:1px solid var(--line); border-radius:14px; padding:18px; }
-    .stat .label { color:var(--muted); font-size:13px; }
-    .stat .value { font-size:27px; font-weight:700; margin:12px 0 5px; }
-    .stat .hint { color:#94a3b8; font-size:12px; }
-    .panel { background:white; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
-    .panel-head { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:18px 20px; border-bottom:1px solid var(--line); }
-    .panel-head h3 { margin:0; font-size:17px; }
-    .tools { display:flex; gap:10px; align-items:center; }
-    input,select,textarea { width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:11px 12px; font:inherit; background:white; }
-    .tools input { max-width:250px; }
-    .table-wrap { overflow-x:auto; }
-    table { border-collapse:collapse; width:100%; min-width:650px; }
-    th,td { padding:14px 18px; text-align:left; border-bottom:1px solid #edf2f7; font-size:13px; }
-    th { color:var(--muted); background:#f8fafc; font-weight:600; }
-    .product { display:flex; align-items:center; gap:12px; }
-    .thumb { width:48px;height:48px;object-fit:cover;border:1px solid var(--line);border-radius:9px;background:#f8fafc; }
-    .product strong { display:block; font-size:13px; }
-    .product small { color:var(--muted); }
-    .stock { display:inline-block; padding:5px 8px; border-radius:999px; background:#dcfce7; color:#166534; font-size:11px; }
-    .stock.low { background:#fef3c7; color:#92400e; }
-    .actions { display:flex; gap:7px; }
-    .actions button { border:1px solid var(--line); border-radius:7px; background:white; padding:7px 9px; cursor:pointer; }
-    .actions .delete { color:#b91c1c; }
-    .empty { text-align:center; padding:35px; color:var(--muted); }
-    .view { display:none; } .view.active { display:block; }
-    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:20px; }
-    .field label { display:block; font-size:13px; font-weight:bold; margin-bottom:7px; }
-    .field.full { grid-column:1/-1; }
-    .form-actions { padding:0 20px 20px; display:flex; gap:10px; }
-    .notice { margin:0 20px 18px; padding:12px; background:#fffbeb; color:#92400e; border-radius:8px; font-size:12px; line-height:1.5; }
-    .toast { position:fixed; bottom:18px; right:18px; background:#0f172a; color:white; padding:13px 16px; border-radius:10px; display:none; z-index:10; }
-    footer { color:#94a3b8; text-align:center; font-size:12px; padding:25px; }
-    @media(max-width:850px) { .layout{grid-template-columns:1fr;} aside{padding:14px;}.brand{margin:0 6px 12px}.nav-label{display:none}.nav-list{display:flex;gap:6px;overflow:auto}.nav-btn{width:auto;white-space:nowrap;padding:10px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.content{padding:16px}header{padding:16px}.welcome h2{font-size:21px} }
-    @media(max-width:480px) { .stats{gap:9px}.stat{padding:13px}.stat .value{font-size:22px}.welcome{align-items:flex-start;flex-direction:column}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.admin-chip{display:none}.panel-head{align-items:flex-start;flex-direction:column}.tools{width:100%}.tools input{max-width:none} }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 20px;
+      background: #f4f6f8;
+    }
+    h1 { color: #172554; }
+    .card {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+    }
+    input, button {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 12px;
+      margin: 7px 0;
+    }
+    button {
+      background: #172554;
+      color: white;
+      border: 0;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .delete { background: #b91c1c; }
+    #status { font-weight: bold; }
+    .product {
+      border-bottom: 1px solid #ddd;
+      padding: 12px 0;
+    }
   </style>
 </head>
 <body>
-<div class="layout">
-  <aside>
-    <div class="brand">
-      <div class="brand-icon">📱</div>
-      <div><strong>MASSAWE</strong><small>Phone Accessories</small></div>
-    </div>
-    <div class="nav-label">MAIN MENU</div>
-    <nav class="nav-list">
-      <button class="nav-btn active" data-view="dashboard">▦ &nbsp; Dashboard</button>
-      <button class="nav-btn" data-view="products">▣ &nbsp; Products</button>
-      <button class="nav-btn" data-view="add">＋ &nbsp; Add product</button>
-    </nav>
-    <div class="nav-label">STORE</div>
-    <nav class="nav-list">
-      <button class="nav-btn" id="exportBtn">⇩ &nbsp; Export products</button>
-      <button class="nav-btn" id="storeBtn">↗ &nbsp; Store website</button>
-    </nav>
-  </aside>
-  <main>
-    <header>
-      <div><h1 id="pageTitle">Dashboard</h1><p>Manage your store products in one place.</p></div>
-      <div class="admin-chip">● ADMIN PANEL PREVIEW</div>
-    </header>
-    <div class="content">
-      <section class="view active" id="dashboard">
-        <div class="welcome"><div><h2>Welcome back 👋</h2><p>Here is an overview of your store inventory.</p></div><button class="primary" id="addFromDash">＋ Add product</button></div>
-        <div class="stats">
-          <div class="stat"><div class="label">Total products</div><div class="value" id="totalProducts">0</div><div class="hint">Products in this browser</div></div>
-          <div class="stat"><div class="label">Stock units</div><div class="value" id="totalStock">0</div><div class="hint">Total quantity available</div></div>
-          <div class="stat"><div class="label">Low stock</div><div class="value" id="lowStock">0</div><div class="hint">5 units or fewer</div></div>
-          <div class="stat"><div class="label">Inventory value</div><div class="value" id="inventoryValue">TZS 0</div><div class="hint">Price × quantity</div></div>
-        </div>
-        <div class="panel"><div class="panel-head"><h3>Recent products</h3><button class="secondary" id="viewAll">View all</button></div><div id="recentTable"></div></div>
-      </section>
-      <section class="view" id="products">
-        <div class="welcome"><div><h2>Products</h2><p>Add, edit, search and remove your products.</p></div><button class="primary" id="addFromProducts">＋ Add product</button></div>
-        <div class="panel"><div class="panel-head"><h3>Product inventory</h3><div class="tools"><input id="searchInput" placeholder="Search products…" aria-label="Search products"></div></div><div id="productsTable"></div></div>
-      </section>
-      <section class="view" id="add">
-        <div class="welcome"><div><h2 id="formTitle">Add a product</h2><p>Enter product details below.</p></div></div>
-        <div class="panel">
-          <form id="productForm">
-            <div class="form-grid">
-              <div class="field"><label for="name">Product name *</label><input id="name" required placeholder="e.g. iPhone 13"></div>
-              <div class="field"><label for="category">Category</label><select id="category"><option>Phones</option><option>Cases & Covers</option><option>Chargers & Cables</option><option>Earphones</option><option>Screen Protectors</option><option>Other Accessories</option></select></div>
-              <div class="field"><label for="price">Price (TZS) *</label><input id="price" type="number" min="0" required placeholder="e.g. 850000"></div>
-              <div class="field"><label for="stock">Stock quantity *</label><input id="stock" type="number" min="0" step="1" required placeholder="e.g. 10"></div>
-              <div class="field full"><label for="imageUrl">Product image URL (optional)</label><input id="imageUrl" type="url" placeholder="https://…"></div>
-              <div class="field full"><label for="description">Description (optional)</label><textarea id="description" rows="3" placeholder="Short product description"></textarea></div>
-            </div>
-            <p class="notice">Preview only: products are saved in this browser on this device. This is not yet connected to your live store or a secure admin login.</p>
-            <div class="form-actions"><button class="primary" type="submit" id="saveBtn">Save product</button><button class="secondary" type="button" id="cancelEdit">Cancel</button></div>
-          </form>
-        </div>
-      </section>
-    </div>
-    <footer>Massawe Phone Accessories · Admin Panel Preview</footer>
-  </main>
-</div>
-<div class="toast" id="toast" role="status"></div>
-<script>
-  const STORAGE_KEY = "massaweAdminProductsV1";
-  let products = [];
-  let editingId = null;
-  const $ = id => document.getElementById(id);
-  try { products = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); if (!Array.isArray(products)) products = []; } catch { products = []; }
 
-  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); render(); }
-  function money(n) { return "TZS " + Number(n || 0).toLocaleString("en-TZ"); }
-  function escapeHtml(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
-  function toast(msg) { const t=$("toast"); t.textContent=msg; t.style.display="block"; setTimeout(()=>t.style.display="none",2400); }
-  function safeImage(url) { return /^https?:\/\//i.test(url || "") ? url : ""; }
-  function tableMarkup(list) {
-    if (!list.length) return '<div class="empty">No products yet. Select “Add product” to create your first item.</div>';
-    return '<div class="table-wrap"><table><thead><tr><th>PRODUCT</th><th>PRICE</th><th>STOCK</th><th>STATUS</th><th>ACTIONS</th></tr></thead><tbody>' +
-      list.map(p => `<tr><td><div class="product"><img class="thumb" src="${escapeHtml(safeImage(p.imageUrl))}" alt="" onerror="this.style.visibility='hidden'"><div><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(p.category)}</small></div></div></td><td>${money(p.price)}</td><td>${Number(p.stock)}</td><td><span class="stock ${Number(p.stock)<=5?'low':''}">${Number(p.stock)<=5?'Low stock':'In stock'}</span></td><td><div class="actions"><button data-edit="${p.id}">Edit</button><button class="delete" data-delete="${p.id}">Delete</button></div></td></tr>`).join("") +
-      '</tbody></table></div>';
-  }
-  function render() {
-    $("totalProducts").textContent = products.length;
-    $("totalStock").textContent = products.reduce((s,p)=>s+Number(p.stock||0),0).toLocaleString("en-TZ");
-    $("lowStock").textContent = products.filter(p=>Number(p.stock)<=5).length;
-    $("inventoryValue").textContent = money(products.reduce((s,p)=>s+Number(p.price||0)*Number(p.stock||0),0));
-    $("recentTable").innerHTML = tableMarkup(products.slice(-5).reverse());
-    const q = $("searchInput").value.trim().toLowerCase();
-    $("productsTable").innerHTML = tableMarkup(products.filter(p=>(p.name+" "+p.category).toLowerCase().includes(q)).slice().reverse());
-  }
-  function showView(view) {
-    document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===view));
-    document.querySelectorAll(".nav-btn[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
-    $("pageTitle").textContent = view==="add" ? (editingId ? "Edit product" : "Add product") : view[0].toUpperCase()+view.slice(1);
-    if(view==="add" && !editingId) $("formTitle").textContent="Add a product";
-    if(view==="products" || view==="dashboard") render();
-    window.scrollTo({top:0,behavior:"smooth"});
-  }
-  function resetForm() { editingId=null; $("productForm").reset(); $("formTitle").textContent="Add a product"; $("saveBtn").textContent="Save product"; }
-  function editProduct(id) {
-    const p=products.find(x=>String(x.id)===String(id)); if(!p) return;
-    editingId=p.id; $("name").value=p.name; $("category").value=p.category; $("price").value=p.price;
-    $("stock").value=p.stock; $("imageUrl").value=p.imageUrl||""; $("description").value=p.description||"";
-    $("formTitle").textContent="Edit product"; $("saveBtn").textContent="Update product"; showView("add");
-  }
-  document.querySelectorAll(".nav-btn[data-view]").forEach(b=>b.addEventListener("click",()=>{ if(b.dataset.view==="add") resetForm(); showView(b.dataset.view); }));
-  $("addFromDash").onclick=$("addFromProducts").onclick=()=>{resetForm();showView("add");};
-  $("viewAll").onclick=()=>showView("products");
-  $("cancelEdit").onclick=()=>{resetForm();showView("products");};
-  $("searchInput").addEventListener("input",render);
-  $("productForm").addEventListener("submit",e=>{
-    e.preventDefault();
-    const item={id:editingId||Date.now(),name:$("name").value.trim(),category:$("category").value,price:Number($("price").value),stock:Number($("stock").value),imageUrl:$("imageUrl").value.trim(),description:$("description").value.trim()};
-    if(!item.name || item.price<0 || item.stock<0) return;
-    if(editingId) products=products.map(p=>String(p.id)===String(editingId)?item:p); else products.push(item);
-    save(); resetForm(); showView("products"); toast(editingId?"Product updated":"Product added");
-  });
-  document.addEventListener("click",e=>{
-    const edit=e.target.closest("[data-edit]"); if(edit) editProduct(edit.dataset.edit);
-    const del=e.target.closest("[data-delete]"); if(del) { const p=products.find(x=>String(x.id)===del.dataset.delete); if(p && confirm(`Delete "${p.name}"?`)){products=products.filter(x=>String(x.id)!==del.dataset.delete);save();toast("Product deleted");} }
-  });
-  $("exportBtn").onclick=()=>{
-    const blob=new Blob([JSON.stringify(products,null,2)],{type:"application/json"});
-    const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="massawe-products.json";a.click();URL.revokeObjectURL(url);toast("Products export started");
-  };
-  $("storeBtn").onclick=()=>window.open("../","_blank","noopener");
-  render();
-</script>
+  <h1>Massawe Phone Accessories</h1>
+  <p id="status">Connecting to Firebase...</p>
+
+  <section id="login" class="card">
+    <h2>Admin Login</h2>
+    <form id="loginForm">
+      <input id="email" type="email"
+        placeholder="Admin email" required>
+      <input id="password" type="password"
+        placeholder="Admin password" required>
+      <button type="submit">Login</button>
+    </form>
+    <p id="loginMessage"></p>
+  </section>
+
+  <section id="dashboard" hidden>
+    <div class="card">
+      <h2>Add Product</h2>
+      <form id="productForm">
+        <input id="name" placeholder="Product name" required>
+        <input id="price" type="number" min="0"
+          placeholder="Price in TZS" required>
+        <input id="image" type="url"
+          placeholder="Product image URL" required>
+        <button type="submit">Save Product</button>
+      </form>
+      <p id="productMessage"></p>
+      <button id="logout">Logout</button>
+    </div>
+
+    <div class="card">
+      <h2>Products in Firebase</h2>
+      <div id="products">Loading products...</div>
+    </div>
+  </section>
+
+  <script type="module">
+    import { initializeApp }
+      from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      getDocs,
+      deleteDoc,
+      doc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCB6CY1gJ9AkU0130c36XeSA6CVlAKS6Wk",
+      authDomain: "massawe-phone-accessories.firebaseapp.com",
+      projectId: "massawe-phone-accessories",
+      storageBucket: "massawe-phone-accessories.firebasestorage.app",
+      messagingSenderId: "1027259580485",
+      appId: "1:102725958048:web:65fcfb51dd7952f84e232c",
+      measurementId: "G-R4HND9LQCD"
+    };
+
+    const ADMIN_UID = "m1rFXXjbXTTUxselWqK7rD3i7H23";
+
+    const status = document.getElementById("status");
+    const login = document.getElementById("login");
+    const dashboard = document.getElementById("dashboard");
+    const loginMessage = document.getElementById("loginMessage");
+    const productMessage = document.getElementById("productMessage");
+    const productsDiv = document.getElementById("products");
+
+    let auth;
+    let db;
+
+    try {
+      const app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+
+      status.textContent = "Firebase initialized. Checking connection...";
+
+      // Test reading the public products collection.
+      await getDocs(collection(db, "products"));
+      status.textContent = "Connected to Firebase successfully!";
+      status.style.color = "green";
+
+    } catch (error) {
+      status.textContent = "Firebase connection failed: " + error.message;
+      status.style.color = "red";
+      console.error(error);
+    }
+
+    document.getElementById("loginForm").addEventListener(
+      "submit", async (event) => {
+        event.preventDefault();
+        loginMessage.textContent = "Logging in...";
+
+        try {
+          await signInWithEmailAndPassword(
+            auth,
+            document.getElementById("email").value.trim(),
+            document.getElementById("password").value
+          );
+          loginMessage.textContent = "";
+        } catch (error) {
+          loginMessage.textContent = "Login failed: " + error.message;
+        }
+      }
+    );
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        login.hidden = false;
+        dashboard.hidden = true;
+        return;
+      }
+
+      if (user.uid !== ADMIN_UID) {
+        await signOut(auth);
+        loginMessage.textContent =
+          "This account is not authorized as admin.";
+        return;
+      }
+
+      login.hidden = true;
+      dashboard.hidden = false;
+      await loadProducts();
+    });
+
+    async function loadProducts() {
+      productsDiv.textContent = "Loading products...";
+
+      try {
+        const snapshot = await getDocs(collection(db, "products"));
+        productsDiv.replaceChildren();
+
+        if (snapshot.empty) {
+          productsDiv.textContent = "No products saved yet.";
+          return;
+        }
+
+        snapshot.forEach((item) => {
+          const data = item.data();
+          const row = document.createElement("div");
+          row.className = "product";
+
+          const title = document.createElement("strong");
+          title.textContent = data.name || "Unnamed product";
+
+          const price = document.createElement("p");
+          price.textContent =
+            "TZS " + Number(data.price || 0).toLocaleString();
+
+          const image = document.createElement("a");
+          image.href = data.image || "#";
+          image.textContent = "View product image";
+          image.target = "_blank";
+          image.rel = "noopener noreferrer";
+
+          const remove = document.createElement("button");
+          remove.className = "delete";
+          remove.textContent = "Delete product";
+
+          remove.addEventListener("click", async () => {
+            if (!confirm("Delete this product?")) return;
+
+            try {
+              await deleteDoc(doc(db, "products", item.id));
+              await loadProducts();
+            } catch (error) {
+              alert("Delete failed: " + error.message);
+            }
+          });
+
+          row.append(title, price, image, remove);
+          productsDiv.appendChild(row);
+        });
+      } catch (error) {
+        productsDiv.textContent = "Could not load products: " + error.message;
+      }
+    }
+
+    document.getElementById("productForm").addEventListener(
+      "submit", async (event) => {
+        event.preventDefault();
+        productMessage.textContent = "Saving product...";
+
+        try {
+          await addDoc(collection(db, "products"), {
+            name: document.getElementById("name").value.trim(),
+            price: Number(document.getElementById("price").value),
+            image: document.getElementById("image").value.trim(),
+            createdAt: serverTimestamp()
+          });
+
+          productMessage.textContent = "Product saved to Firebase!";
+          event.target.reset();
+          await loadProducts();
+        } catch (error) {
+          productMessage.textContent = "Save failed: " + error.message;
+        }
+      }
+    );
+
+    document.getElementById("logout").addEventListener(
+      "click", () => signOut(auth)
+    );
+  </script>
 </body>
 </html>
