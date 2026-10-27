@@ -4,44 +4,77 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Massawe Phone Accessories - Admin</title>
+
   <style>
+    * { box-sizing: border-box; }
+
     body {
       font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 30px auto;
-      padding: 20px;
+      max-width: 850px;
+      margin: 25px auto;
+      padding: 16px;
       background: #f4f6f8;
+      color: #172554;
     }
-    h1 { color: #172554; }
+
+    h1 { text-align: center; }
+
     .card {
       background: white;
       padding: 20px;
       margin-bottom: 20px;
-      border-radius: 10px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px #0000000d;
     }
-    input, button {
-      box-sizing: border-box;
+
+    input, select, button {
       width: 100%;
       padding: 12px;
       margin: 7px 0;
+      border-radius: 6px;
+      font-size: 16px;
     }
+
+    input, select { border: 1px solid #cbd5e1; }
+
     button {
       background: #172554;
       color: white;
       border: 0;
-      border-radius: 5px;
       cursor: pointer;
     }
+
+    button:disabled { opacity: .6; cursor: wait; }
     .delete { background: #b91c1c; }
-    #status { font-weight: bold; }
+    .edit { background: #0369a1; }
+    .cancel { background: #64748b; }
+
+    #status, #loginMessage, #productMessage {
+      overflow-wrap: anywhere;
+    }
+
     .product {
       border-bottom: 1px solid #ddd;
-      padding: 12px 0;
+      padding: 15px 0;
     }
+
+    .product img, #preview {
+      width: 150px;
+      max-width: 100%;
+      height: 150px;
+      object-fit: contain;
+      background: #f8fafc;
+      border-radius: 8px;
+      display: block;
+      margin: 10px 0;
+    }
+
+    .muted { color: #64748b; font-size: 14px; }
+    [hidden] { display: none !important; }
   </style>
 </head>
-<body>
 
+<body>
   <h1>Massawe Phone Accessories</h1>
   <p id="status">Connecting to Firebase...</p>
 
@@ -54,26 +87,62 @@
         placeholder="Admin password" required>
       <button type="submit">Login</button>
     </form>
-    <p id="loginMessage"></p>
+    <p id="loginMessage" role="status"></p>
   </section>
 
   <section id="dashboard" hidden>
     <div class="card">
-      <h2>Add Product</h2>
+      <h2 id="formTitle">Add Product</h2>
+
       <form id="productForm">
-        <input id="name" placeholder="Product name" required>
-        <input id="price" type="number" min="0"
-          placeholder="Price in TZS" required>
-        <input id="image" type="url"
-          placeholder="Product image URL" required>
-        <button type="submit">Save Product</button>
+        <label for="name">Product name</label>
+        <input id="name" maxlength="100"
+          placeholder="e.g. iPhone 13 Case" required>
+
+        <label for="price">Price (TZS)</label>
+        <input id="price" type="number"
+          min="0" step="1" placeholder="e.g. 25000" required>
+
+        <label for="category">Product type</label>
+        <select id="category" required>
+          <option value="">Choose product type</option>
+          <option>Phone Cases</option>
+          <option>Chargers</option>
+          <option>Earphones</option>
+          <option>Screen Protectors</option>
+          <option>Power Banks</option>
+          <option>Cables</option>
+          <option>Other Accessories</option>
+        </select>
+
+        <label for="imageFile">Choose product image from computer</label>
+        <input id="imageFile" type="file"
+          accept="image/jpeg,image/png,image/webp">
+
+        <p class="muted">
+          Choose JPG, PNG or WebP. Images are resized before saving.
+          Keep the image reasonably small.
+        </p>
+
+        <img id="preview" alt="Product image preview" hidden>
+
+        <label for="imageUrl">
+          Or use an existing online image URL
+        </label>
+        <input id="imageUrl" type="url"
+          placeholder="https://...">
+
+        <button id="saveButton" type="submit">Save Product</button>
+        <button id="cancelEdit" class="cancel"
+          type="button" hidden>Cancel Edit</button>
       </form>
-      <p id="productMessage"></p>
-      <button id="logout">Logout</button>
+
+      <p id="productMessage" role="status"></p>
+      <button id="logout" type="button">Logout</button>
     </div>
 
     <div class="card">
-      <h2>Products in Firebase</h2>
+      <h2>Products</h2>
       <div id="products">Loading products...</div>
     </div>
   </section>
@@ -95,6 +164,7 @@
       addDoc,
       getDocs,
       deleteDoc,
+      updateDoc,
       doc,
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
@@ -111,70 +181,180 @@
 
     const ADMIN_UID = "m1rFXXjbXTTUxselWqK7rD3i7H23";
 
-    const status = document.getElementById("status");
-    const login = document.getElementById("login");
-    const dashboard = document.getElementById("dashboard");
-    const loginMessage = document.getElementById("loginMessage");
-    const productMessage = document.getElementById("productMessage");
-    const productsDiv = document.getElementById("products");
+    const $ = id => document.getElementById(id);
+    const login = $("login");
+    const dashboard = $("dashboard");
+    const status = $("status");
+    const productsDiv = $("products");
+    const productMessage = $("productMessage");
+    const imageFile = $("imageFile");
+    const imageUrl = $("imageUrl");
+    const preview = $("preview");
+    const saveButton = $("saveButton");
 
     let auth;
     let db;
+    let editingId = null;
+    let selectedImageData = "";
 
     try {
       const app = initializeApp(firebaseConfig);
       auth = getAuth(app);
       db = getFirestore(app);
 
-      status.textContent = "Firebase initialized. Checking connection...";
-
-      // Test reading the public products collection.
-      await getDocs(collection(db, "products"));
-      status.textContent = "Connected to Firebase successfully!";
+      status.textContent = "Firebase initialized.";
       status.style.color = "green";
-
     } catch (error) {
-      status.textContent = "Firebase connection failed: " + error.message;
+      status.textContent = "Firebase initialization failed: " + error.message;
       status.style.color = "red";
       console.error(error);
     }
 
-    document.getElementById("loginForm").addEventListener(
-      "submit", async (event) => {
-        event.preventDefault();
-        loginMessage.textContent = "Logging in...";
+    function showMessage(message, isError = false) {
+      productMessage.textContent = message;
+      productMessage.style.color = isError ? "#b91c1c" : "#166534";
+    }
 
-        try {
-          await signInWithEmailAndPassword(
-            auth,
-            document.getElementById("email").value.trim(),
-            document.getElementById("password").value
-          );
-          loginMessage.textContent = "";
-        } catch (error) {
-          loginMessage.textContent = "Login failed: " + error.message;
+    function resetForm() {
+      $("productForm").reset();
+      editingId = null;
+      selectedImageData = "";
+      preview.src = "";
+      preview.hidden = true;
+      $("formTitle").textContent = "Add Product";
+      saveButton.textContent = "Save Product";
+      $("cancelEdit").hidden = true;
+      imageFile.required = false;
+      imageUrl.required = false;
+    }
+
+    // Compress an image locally before saving it in Firestore.
+    // Firestore documents must remain below its 1 MiB document limit.
+    async function compressImage(file) {
+      if (!file.type.startsWith("image/")) {
+        throw new Error("Please select a valid image.");
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error("Image is too large. Choose an image under 10 MB.");
+      }
+
+      const source = URL.createObjectURL(file);
+
+      try {
+        const img = new Image();
+
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = () => reject(new Error("Could not read this image."));
+          img.src = source;
+        });
+
+        const maxDimension = 600;
+        const scale = Math.min(
+          1,
+          maxDimension / Math.max(img.width, img.height)
+        );
+
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+
+        const context = canvas.getContext("2d");
+        context.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        // JPEG usually produces smaller image data than PNG.
+        let quality = 0.65;
+        let data = canvas.toDataURL("image/jpeg", quality);
+
+        while (data.length > 450000 && quality > 0.3) {
+          quality -= 0.1;
+          data = canvas.toDataURL("image/jpeg", quality);
         }
-      }
-    );
 
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        login.hidden = false;
-        dashboard.hidden = true;
-        return;
-      }
+        if (data.length > 700000) {
+          throw new Error(
+            "Image is still too large. Choose a smaller image."
+          );
+        }
 
-      if (user.uid !== ADMIN_UID) {
-        await signOut(auth);
-        loginMessage.textContent =
-          "This account is not authorized as admin.";
-        return;
+        return data;
+      } finally {
+        URL.revokeObjectURL(source);
       }
+    }
 
-      login.hidden = true;
-      dashboard.hidden = false;
-      await loadProducts();
+    imageFile.addEventListener("change", async () => {
+      const file = imageFile.files[0];
+      if (!file) return;
+
+      try {
+        showMessage("Preparing image...");
+        selectedImageData = await compressImage(file);
+        preview.src = selectedImageData;
+        preview.hidden = false;
+        imageUrl.value = "";
+        showMessage("Image ready to save.");
+      } catch (error) {
+        selectedImageData = "";
+        imageFile.value = "";
+        preview.hidden = true;
+        showMessage(error.message, true);
+      }
     });
+
+    imageUrl.addEventListener("input", () => {
+      if (imageUrl.value.trim()) {
+        selectedImageData = "";
+        imageFile.value = "";
+        preview.src = imageUrl.value.trim();
+        preview.hidden = false;
+      }
+    });
+
+    $("loginForm").addEventListener("submit", async event => {
+      event.preventDefault();
+
+      if (!auth) {
+        $("loginMessage").textContent = "Firebase is not initialized.";
+        return;
+      }
+
+      $("loginMessage").textContent = "Logging in...";
+
+      try {
+        await signInWithEmailAndPassword(
+          auth,
+          $("email").value.trim(),
+          $("password").value
+        );
+        $("loginMessage").textContent = "";
+      } catch (error) {
+        $("loginMessage").textContent =
+          "Login failed: " + error.message;
+      }
+    });
+
+    if (auth && db) {
+      onAuthStateChanged(auth, async user => {
+        if (!user) {
+          login.hidden = false;
+          dashboard.hidden = true;
+          return;
+        }
+
+        if (user.uid !== ADMIN_UID) {
+          await signOut(auth);
+          $("loginMessage").textContent =
+            "This account is not authorized as admin.";
+          return;
+        }
+
+        login.hidden = true;
+        dashboard.hidden = false;
+        await loadProducts();
+      });
+    }
 
     async function loadProducts() {
       productsDiv.textContent = "Loading products...";
@@ -188,10 +368,19 @@
           return;
         }
 
-        snapshot.forEach((item) => {
+        snapshot.forEach(item => {
           const data = item.data();
           const row = document.createElement("div");
           row.className = "product";
+
+          const image = document.createElement("img");
+          image.alt = data.name || "Product";
+          image.loading = "lazy";
+          image.src = data.image || "";
+          image.onerror = () => {
+            image.alt = "Image could not be loaded";
+            image.removeAttribute("src");
+          };
 
           const title = document.createElement("strong");
           title.textContent = data.name || "Unnamed product";
@@ -200,11 +389,37 @@
           price.textContent =
             "TZS " + Number(data.price || 0).toLocaleString();
 
-          const image = document.createElement("a");
-          image.href = data.image || "#";
-          image.textContent = "View product image";
-          image.target = "_blank";
-          image.rel = "noopener noreferrer";
+          const category = document.createElement("p");
+          category.textContent = "Type: " + (data.category || "Other");
+
+          const edit = document.createElement("button");
+          edit.className = "edit";
+          edit.textContent = "Edit product";
+
+          edit.addEventListener("click", () => {
+            editingId = item.id;
+            $("name").value = data.name || "";
+            $("price").value = data.price ?? "";
+            $("category").value = data.category || "Other Accessories";
+
+            selectedImageData = "";
+            imageFile.value = "";
+            imageUrl.value = data.image && !data.image.startsWith("data:")
+              ? data.image : "";
+
+            if (data.image) {
+              preview.src = data.image;
+              preview.hidden = false;
+            } else {
+              preview.hidden = true;
+            }
+
+            $("formTitle").textContent = "Edit Product";
+            saveButton.textContent = "Update Product";
+            $("cancelEdit").hidden = false;
+            showMessage("Editing: " + (data.name || "product"));
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
 
           const remove = document.createElement("button");
           remove.className = "delete";
@@ -215,45 +430,101 @@
 
             try {
               await deleteDoc(doc(db, "products", item.id));
+              showMessage("Product deleted.");
               await loadProducts();
             } catch (error) {
               alert("Delete failed: " + error.message);
             }
           });
 
-          row.append(title, price, image, remove);
+          row.append(image, title, price, category, edit, remove);
           productsDiv.appendChild(row);
         });
       } catch (error) {
-        productsDiv.textContent = "Could not load products: " + error.message;
+        productsDiv.textContent =
+          "Could not load products: " + error.message;
       }
     }
 
-    document.getElementById("productForm").addEventListener(
-      "submit", async (event) => {
-        event.preventDefault();
-        productMessage.textContent = "Saving product...";
+    $("productForm").addEventListener("submit", async event => {
+      event.preventDefault();
 
-        try {
-          await addDoc(collection(db, "products"), {
-            name: document.getElementById("name").value.trim(),
-            price: Number(document.getElementById("price").value),
-            image: document.getElementById("image").value.trim(),
-            createdAt: serverTimestamp()
-          });
-
-          productMessage.textContent = "Product saved to Firebase!";
-          event.target.reset();
-          await loadProducts();
-        } catch (error) {
-          productMessage.textContent = "Save failed: " + error.message;
-        }
+      if (!auth?.currentUser || auth.currentUser.uid !== ADMIN_UID) {
+        showMessage("Please log in with the authorized admin account.", true);
+        return;
       }
-    );
 
-    document.getElementById("logout").addEventListener(
-      "click", () => signOut(auth)
-    );
+      const name = $("name").value.trim();
+      const price = Number($("price").value);
+      const category = $("category").value;
+
+      if (!name || !category || !Number.isFinite(price) || price < 0) {
+        showMessage("Enter a valid name, price and product type.", true);
+        return;
+      }
+
+      let image = selectedImageData || imageUrl.value.trim();
+
+      if (!image && editingId) {
+        showMessage(
+          "Choose a new image or enter an image URL to replace the old one.",
+          true
+        );
+        return;
+      }
+
+      if (!image) {
+        showMessage("Choose a product image or enter an image URL.", true);
+        return;
+      }
+
+      if (image.startsWith("data:") && image.length > 700000) {
+        showMessage("Image is too large. Choose a smaller image.", true);
+        return;
+      }
+
+      saveButton.disabled = true;
+      showMessage(editingId ? "Updating product..." : "Saving product...");
+
+      try {
+        const product = {
+          name,
+          price,
+          category,
+          image,
+          updatedAt: serverTimestamp()
+        };
+
+        if (editingId) {
+          await updateDoc(doc(db, "products", editingId), product);
+          showMessage("Product updated successfully!");
+        } else {
+          product.createdAt = serverTimestamp();
+          await addDoc(collection(db, "products"), product);
+          showMessage("Product saved successfully!");
+        }
+
+        resetForm();
+        await loadProducts();
+      } catch (error) {
+        showMessage(
+          "Save failed: " + error.message +
+          ". Check Firestore rules and document size.",
+          true
+        );
+      } finally {
+        saveButton.disabled = false;
+      }
+    });
+
+    $("cancelEdit").addEventListener("click", () => {
+      resetForm();
+      showMessage("Edit cancelled.");
+    });
+
+    $("logout").addEventListener("click", async () => {
+      if (auth) await signOut(auth);
+    });
   </script>
 </body>
 </html>
