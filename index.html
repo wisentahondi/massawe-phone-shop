@@ -264,7 +264,7 @@
 
       const name = String(product.name || "Product");
       const price = Number(product.price);
-      const imageUrl = String(product.imageUrl || "");
+      const imageUrl = String(product.image || product.imageUrl || "");
 
       const image = document.createElement("img");
       image.className = "product-image";
